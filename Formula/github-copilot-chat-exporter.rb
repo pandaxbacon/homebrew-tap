@@ -10,8 +10,21 @@ class GithubCopilotChatExporter < Formula
   depends_on "python@3.11"
 
   def install
-    # Install the package and let setup.py handle dependencies
-    virtualenv_install_with_resources
+    # Create virtualenv and install package with dependencies
+    virtualenv_create(libexec, "python@3.11")
+    
+    # Install dependencies first
+    system libexec/"bin/pip", "install", "-v",
+           "beautifulsoup4==4.12.3",
+           "playwright==1.48.0",
+           "requests==2.32.3"
+    
+    # Install the main package
+    system libexec/"bin/pip", "install", "-v", "--no-deps",
+           "--ignore-installed", buildpath
+    
+    # Create executable wrapper
+    bin.install_symlink libexec/"bin/copilot-exporter"
   end
 
   def post_install

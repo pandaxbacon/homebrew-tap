@@ -12,13 +12,18 @@ class GithubCopilotChatExporter < Formula
   def install
     # Install the package and let setup.py handle dependencies
     virtualenv_install_with_resources
-    
-    # Install Playwright browsers in a post-install step
+  end
+
+  def post_install
+    # Install Playwright browsers after package installation
     system libexec/"bin/playwright", "install", "chromium"
   end
 
   def caveats
     <<~EOS
+      Playwright browsers are being installed...
+      This may take a few minutes on first install.
+      
       First-time setup: Authenticate with GitHub
         copilot-exporter --mode login --url <SHARE_URL>
       

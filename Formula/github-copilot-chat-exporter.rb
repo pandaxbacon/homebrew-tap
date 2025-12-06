@@ -10,38 +10,32 @@ class GithubCopilotChatExporter < Formula
   depends_on "python@3.11"
 
   def install
-    # Create virtualenv and install package with dependencies
-    virtualenv_create(libexec, "python@3.11")
+    # Use standard Python formula pattern
+    venv = virtualenv_create(libexec, Formula["python@3.11"].bin/"python3.11")
+    venv.pip_install_and_link buildpath
     
-    # Install dependencies first
-    system libexec/"bin/pip", "install", "-v",
-           "beautifulsoup4==4.12.3",
-           "playwright==1.48.0",
-           "requests==2.32.3"
-    
-    # Install the main package
-    system libexec/"bin/pip", "install", "-v", "--no-deps",
-           "--ignore-installed", buildpath
-    
-    # Create executable wrapper
-    bin.install_symlink libexec/"bin/copilot-exporter"
+    # Install Playwright browsers after package is installed
+    system libexec/"bin/playwright", "install", "chromium" if build.head?
   end
 
   def post_install
-    # Install Playwright browsers after package installation
-    system libexec/"bin/playwright", "install", "chromium"
+    # Install Playwright browsers in post-install
+    system "#{libexec}/bin/playwright", "install", "chromium", "--with-deps"
+  rescue StandardError
+    opoo "Playwright browser installation failed. Run manually:"
+    opoo "  #{libexec}/bin/playwright install chromium"
   end
 
   def caveats
     <<~EOS
-      Playwright browsers are being installed...
-      This may take a few minutes on first install.
-      
       First-time setup: Authenticate with GitHub
         copilot-exporter --mode login --url <SHARE_URL>
       
       Export conversations:
         copilot-exporter --mode run --url <SHARE_URL> --pdf
+      
+      If Playwright browsers didn't install:
+        #{libexec}/bin/playwright install chromium
     EOS
   end
 

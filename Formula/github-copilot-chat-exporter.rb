@@ -1,4 +1,4 @@
-class CopilotExporter < Formula
+class GithubCopilotChatExporter < Formula
   include Language::Python::Virtualenv
 
   desc "Export GitHub Copilot shared conversations to Markdown and PDF"

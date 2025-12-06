@@ -6,7 +6,7 @@ This tap provides the Homebrew formula for [github-copilot-chat-exporter](https:
 
 ```bash
 brew tap pandaxbacon/tap
-brew install copilot-exporter
+brew install github-copilot-chat-exporter
 ```
 
 ## Usage

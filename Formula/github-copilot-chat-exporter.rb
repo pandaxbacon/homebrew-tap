@@ -1,6 +1,4 @@
 class GithubCopilotChatExporter < Formula
-  include Language::Python::Virtualenv
-
   desc "Export GitHub Copilot shared conversations to Markdown and PDF"
   homepage "https://github.com/pandaxbacon/github-copilot-chat-exporter"
   url "https://github.com/pandaxbacon/github-copilot-chat-exporter/archive/refs/tags/v1.0.0.tar.gz"
@@ -10,20 +8,27 @@ class GithubCopilotChatExporter < Formula
   depends_on "python@3.11"
 
   def install
-    # Use standard Python formula pattern
-    venv = virtualenv_create(libexec, Formula["python@3.11"].bin/"python3.11")
-    venv.pip_install_and_link buildpath
+    # Install files to libexec
+    libexec.install Dir["*"]
     
-    # Install Playwright browsers after package is installed
-    system libexec/"bin/playwright", "install", "chromium" if build.head?
-  end
-
-  def post_install
-    # Install Playwright browsers in post-install
-    system "#{libexec}/bin/playwright", "install", "chromium", "--with-deps"
-  rescue StandardError
-    opoo "Playwright browser installation failed. Run manually:"
-    opoo "  #{libexec}/bin/playwright install chromium"
+    # Create wrapper script
+    (bin/"copilot-exporter").write <<~EOS
+      #!/bin/bash
+      SCRIPT_DIR="#{libexec}"
+      
+      # Check if venv exists, create if not
+      if [ ! -d "$SCRIPT_DIR/.venv" ]; then
+        echo "First-time setup: Creating virtual environment..."
+        python3.11 -m venv "$SCRIPT_DIR/.venv"
+        "$SCRIPT_DIR/.venv/bin/pip" install -q -r "$SCRIPT_DIR/requirements.txt"
+        "$SCRIPT_DIR/.venv/bin/playwright" install chromium >/dev/null 2>&1
+      fi
+      
+      # Run the script
+      exec "$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/scraper_playwright.py" "$@"
+    EOS
+    
+    chmod 0755, bin/"copilot-exporter"
   end
 
   def caveats
@@ -34,12 +39,11 @@ class GithubCopilotChatExporter < Formula
       Export conversations:
         copilot-exporter --mode run --url <SHARE_URL> --pdf
       
-      If Playwright browsers didn't install:
-        #{libexec}/bin/playwright install chromium
+      Note: First run will set up dependencies automatically (may take 1-2 minutes)
     EOS
   end
 
   test do
-    assert_match "Playwright exporter", shell_output("#{bin}/copilot-exporter --help")
+    assert_match "usage", shell_output("#{bin}/copilot-exporter --help 2>&1", 2)
   end
 end

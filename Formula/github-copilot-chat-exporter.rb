@@ -10,30 +10,29 @@ class GithubCopilotChatExporter < Formula
   depends_on "python@3.11"
 
   def install
+    # Create virtualenv and install package with all dependencies
     virtualenv_create(libexec, "python@3.11")
+    system libexec/"bin/pip", "install", "-v", "--ignore-installed", buildpath
     
-    # Install the package with all dependencies using setup.py
-    system libexec/"bin/pip", "install", "--no-deps", buildpath
-    system libexec/"bin/pip", "install", "beautifulsoup4==4.12.3", "playwright==1.48.0", "requests==2.32.3"
+    # Install Playwright browsers
+    system libexec/"bin/playwright", "install", "chromium"
     
-    # Create wrapper script
-    (bin/"copilot-exporter").write_env_script libexec/"bin/copilot-exporter", PATH: "#{libexec}/bin:$PATH"
-    
-    # Post-install: Playwright browsers
-    system libexec/"bin/python", "-m", "playwright", "install", "chromium"
+    # Create wrapper for the copilot-exporter command
+    (bin/"copilot-exporter").write_env_script(libexec/"bin/copilot-exporter",
+                                               PATH: "#{libexec}/bin:$PATH")
   end
 
   def caveats
     <<~EOS
-      First-time setup: Run login to authenticate with GitHub
+      First-time setup: Authenticate with GitHub
         copilot-exporter --mode login --url <SHARE_URL>
       
-      Then export conversations:
+      Export conversations:
         copilot-exporter --mode run --url <SHARE_URL> --pdf
     EOS
   end
 
   test do
-    assert_match "Playwright exporter for Copilot share pages", shell_output("#{bin}/copilot-exporter --help")
+    assert_match "Playwright exporter", shell_output("#{bin}/copilot-exporter --help")
   end
 end

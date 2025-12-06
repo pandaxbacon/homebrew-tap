@@ -10,16 +10,11 @@ class GithubCopilotChatExporter < Formula
   depends_on "python@3.11"
 
   def install
-    # Create virtualenv and install package with all dependencies
-    virtualenv_create(libexec, "python@3.11")
-    system libexec/"bin/pip", "install", "-v", "--ignore-installed", buildpath
+    # Install the package and let setup.py handle dependencies
+    virtualenv_install_with_resources
     
-    # Install Playwright browsers
+    # Install Playwright browsers in a post-install step
     system libexec/"bin/playwright", "install", "chromium"
-    
-    # Create wrapper for the copilot-exporter command
-    (bin/"copilot-exporter").write_env_script(libexec/"bin/copilot-exporter",
-                                               PATH: "#{libexec}/bin:$PATH")
   end
 
   def caveats
